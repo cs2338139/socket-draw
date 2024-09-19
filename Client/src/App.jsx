@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import usePrevious from './hook/usePrevious.js'
+import p5Instance from './function/p5.js'
+
 import { SocketFunction, socket } from './classes/Socket.js'
 
 function App() {
@@ -12,14 +14,13 @@ function App() {
   const fq = 10 // (ms)
   const fqInt = useRef()
 
-  const _p5 = useRef(null)
-  const p5 = useRef(null)
+  const p5Inst = useRef(null)
 
   const [methodTypeValue, setMethodTypeValue] = useState()
   const methodTypeValueRef = useRef(methodTypeValue)
   const preMethodType = usePrevious(methodTypeValue)
 
-  const [isP5Ready, setIsP5Ready] = useState(false)
+  // const [isP5Ready, setIsP5Ready] = useState(false)
   const selfColor = useRef('#FFFFFF')
 
   const paths = useRef([])
@@ -87,7 +88,7 @@ function App() {
 
         return
       }
-      currentPoint.current = p5.current.createVector(p5.current.mouseX, p5.current.mouseY)
+      currentPoint.current = p5Inst.current.createVector(p5Inst.current.mouseX, p5Inst.current.mouseY)
     }
 
     static end() {
@@ -110,10 +111,10 @@ function App() {
 
         if (image.selectColor === '') {
           if (
-            p5.current.mouseX > image.pos.x &&
-            p5.current.mouseX < image.pos.x + image.image.width &&
-            p5.current.mouseY > image.pos.y &&
-            p5.current.mouseY < image.pos.y + image.image.height
+            p5Inst.current.mouseX > image.pos.x &&
+            p5Inst.current.mouseX < image.pos.x + image.image.width &&
+            p5Inst.current.mouseY > image.pos.y &&
+            p5Inst.current.mouseY < image.pos.y + image.image.height
           ) {
             _image = image
           }
@@ -128,7 +129,7 @@ function App() {
 
       if (image) {
         currentSelect.current = image
-        currentSelectObjectOffset.current = new Vector2(p5.current.mouseX - currentSelect.current.pos.x, p5.current.mouseY - currentSelect.current.pos.y)
+        currentSelectObjectOffset.current = new Vector2(p5Inst.current.mouseX - currentSelect.current.pos.x, p5Inst.current.mouseY - currentSelect.current.pos.y)
         currentSelect.current.selectColor = selfColor.current
         socket.emit('canvas-selectStart', { id: currentSelect.current.id, selectColor: selfColor.current })
       }
@@ -145,7 +146,7 @@ function App() {
         return
       }
 
-      const pos = new Vector2(p5.current.mouseX - currentSelectObjectOffset.current.x, p5.current.mouseY - currentSelectObjectOffset.current.y)
+      const pos = new Vector2(p5Inst.current.mouseX - currentSelectObjectOffset.current.x, p5Inst.current.mouseY - currentSelectObjectOffset.current.y)
 
       currentSelect.current.pos = pos
       socket.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
@@ -170,13 +171,6 @@ function App() {
     select: Select
   }
 
-  useEffect(() => {
-    import('p5').then((module) => {
-      _p5.current = module.default
-
-      setIsP5Ready(true)
-    })
-  }, [])
 
   useEffect(() => {
     if (isSocketConnect) {
@@ -185,7 +179,8 @@ function App() {
       containerEl.current.style.backgroundColor = '#FFFFFF'
       colorBarEl.current.style.backgroundColor = selfColor.current
 
-      if (isP5Ready) { startP5() }
+      // if (isP5Ready) { startP5() }
+      startP5()
     } else {
       startBtnEl.current.innerHTML = 'connect'
       containerEl.current.style.backgroundColor = '#AAAAAA'
@@ -199,7 +194,7 @@ function App() {
       isDrawing.current = false
       images.current = []
       currentSelectObjectOffset.current = null
-      p5.current?.remove()
+      p5Inst.current?.remove()
     }
   }, [isSocketConnect])
 
@@ -275,49 +270,48 @@ function App() {
   }
 
   function startP5() {
-    // eslint-disable-next-line no-unused-vars
-    const sketch = new _p5.current((p5Inst) => {
-      p5.current = p5Inst
+    new p5Instance((p5) => {
+      p5Inst.current = p5
 
-      p5.current.setup = () => {
-        p5.current.createCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight).parent(containerEl.current)
-        p5.current.frameRate(30)
+      p5.setup = () => {
+        p5.createCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight).parent(containerEl.current)
+        p5.frameRate(30)
       }
 
-      p5.current.draw = () => {
-        p5.current.background(255)
+      p5.draw = () => {
+        p5.background(255)
 
         for (let i = 0; i < images.current.length; i++) {
           const image = images.current[i]
 
-          p5.current.image(image.image, image.pos.x, image.pos.y, image.image.width, image.image.height)
+          p5.image(image.image, image.pos.x, image.pos.y, image.image.width, image.image.height)
 
           if (image.selectColor !== '') {
-            p5.current.stroke(image.selectColor)
-            p5.current.strokeWeight(5)
-            p5.current.noFill()
-            p5.current.rect(image.pos.x, image.pos.y, image.image.width, image.image.height)
+            p5.stroke(image.selectColor)
+            p5.strokeWeight(5)
+            p5.noFill()
+            p5.rect(image.pos.x, image.pos.y, image.image.width, image.image.height)
           }
         }
 
-        p5.current.strokeWeight(5)
-        p5.current.noFill()
+        p5.strokeWeight(5)
+        p5.noFill()
 
         for (let i = 0; i < paths.current.length; i++) {
           const path = paths.current[i].path
 
-          p5.current.beginShape()
-          p5.current.stroke(paths.current[i].color)
+          p5.beginShape()
+          p5.stroke(paths.current[i].color)
 
           for (let j = 0; j < path.length; j++) {
-            p5.current.vertex(path[j].x, path[j].y)
+            p5.vertex(path[j].x, path[j].y)
           }
 
-          p5.current.endShape()
+          p5.endShape()
         }
       }
 
-      p5.current.mousePressed = () => {
+      p5.mousePressed = () => {
         if (!isInCanvas()) { return }
 
         const method = methodClass[methodTypeValueRef.current]
@@ -325,7 +319,7 @@ function App() {
         method.start()
       }
 
-      p5.current.mouseDragged = () => {
+      p5.mouseDragged = () => {
         if (!isInCanvas()) { return }
 
         const method = methodClass[methodTypeValueRef.current]
@@ -333,19 +327,18 @@ function App() {
         method.move()
       }
 
-      p5.current.mouseReleased = () => {
+      p5.mouseReleased = () => {
         if (!isInCanvas()) { return }
 
         const method = methodClass[methodTypeValueRef.current]
         method.end()
       }
 
-      p5.current.windowResized = () => {
-        p5.current.resizeCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight)
+      p5.windowResized = () => {
+        p5.resizeCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight)
       }
     })
   }
-
 
   function handleImage(event) {
     const file = event.target.files[0]
@@ -365,7 +358,7 @@ function App() {
   }
 
   function pushNewImage(imageBase64, action = null) {
-    p5.current.loadImage(imageBase64.base64, (loadedImage) => {
+    p5Inst.current.loadImage(imageBase64.base64, (loadedImage) => {
       const image = new Image(loadedImage, imageBase64.pos, imageBase64.id)
 
       images.current.push(image)
@@ -394,9 +387,9 @@ function App() {
   }
 
   const isInCanvas = () => {
-    if (p5.current.mouseX < 0 || p5.current.mouseY < 0) { return false }
+    if (p5Inst.current.mouseX < 0 || p5Inst.current.mouseY < 0) { return false }
 
-    if (p5.current.mouseX > containerEl.current.offsetWidth || p5.current.mouseY > containerEl.current.offsetHeight) { return false }
+    if (p5Inst.current.mouseX > containerEl.offsetWidth || p5Inst.current.mouseY > containerEl.current.offsetHeight) { return false }
 
     return true
   }
