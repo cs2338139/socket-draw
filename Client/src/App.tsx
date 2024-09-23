@@ -1,56 +1,64 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import usePrevious from './hooks/usePrevious.ts'
-import p5Instance from './functions/p5.ts'
+import p5Instance from './functions/p5.js'
 
-import { SocketFunction, socket } from './classes/Socket.ts'
+import { SocketFunction, socket } from './classes/Socket.js'
 
 function App() {
   const [isSocketConnect, setIsSocketConnect] = useState(false)
   const socketFunction = new SocketFunction()
-  const startBtnEl = useRef()
-  const containerEl = useRef()
-  const colorBarEl = useRef()
+  const startBtnEl = useRef<HTMLButtonElement>(null)
+  const containerEl = useRef<HTMLDivElement>(null)
+  const colorBarEl = useRef<HTMLDivElement>(null)
 
-  const fq = 10 // (ms)
-  const fqInt = useRef()
+  const fq:number = 10 // (ms)
+  const fqInt = useRef<ReturnType<typeof setInterval> | null>()
 
-  const p5Inst = useRef(null)
+  const p5Inst = useRef<typeof p5Instance|null>(null)
 
-  const [methodTypeValue, setMethodTypeValue] = useState()
-  const methodTypeValueRef = useRef(methodTypeValue)
-  const preMethodType = usePrevious(methodTypeValue)
+  const [methodTypeValue, setMethodTypeValue] = useState<string>("")
+  const methodTypeValueRef = useRef<string>(methodTypeValue)
+  const preMethodType = usePrevious<string>(methodTypeValue)
 
   // const [isP5Ready, setIsP5Ready] = useState(false)
   const selfColor = useRef('#FFFFFF')
 
-  const paths = useRef([])
-  const currentPoint = useRef(null)
-  const currentPath = useRef([])
+  const paths = useRef<Path[]>([])
+  const currentPoint = useRef<any>(null)
+  const currentPath = useRef<Path|null>()
   const isDrawing = useRef(false)
 
-  const images = useRef([])
+  const images = useRef<Image[]>([])
 
-  const currentSelect = useRef(null)
-  const currentSelectObjectOffset = useRef(null)
+  const currentSelect = useRef<Image|null>(null)
+  const currentSelectObjectOffset = useRef<Vector2|null>(null)
 
   class Path {
-    constructor(color = '#000000', id = null) {
+    color: string;
+    id?: string|null;
+    constructor(color:string = '#000000', id:string|null = null) {
       this.color = color
       this.id = id
     }
 
-    path = []
+    path: any[] = []
   }
 
   class Vector2 {
-    constructor(x = 0, y = 0) {
+    x: number;
+    y: number;
+
+    constructor(x:number = 0, y:number = 0) {
       this.x = x
       this.y = y
     }
   }
 
   class Image {
-    constructor(image, pos = new Vector2(), id) {
+    image: any;
+    pos: Vector2;
+    id: string;
+    constructor(image:any, pos:Vector2 = new Vector2(), id:string) {
       this.image = image
       this.pos = pos
       this.id = id
@@ -60,7 +68,10 @@ function App() {
   }
 
   class ImageBase64 {
-    constructor(base64, pos = new Vector2()) {
+    base64: string;
+    pos: Vector2;
+    id: string;
+    constructor(base64:string, pos:Vector2 = new Vector2()) {
       this.base64 = base64
       this.pos = pos
       this.id = getCreateImageUniId()
@@ -75,8 +86,8 @@ function App() {
       paths.current.push(currentPath.current)
 
       fqInt.current = setInterval(() => {
-        if (!currentPoint.current) { return }
 
+        if(!currentPath.current) {return}
         currentPath.current.path.push(currentPoint.current)
         socket.emit('canvas-drawing', { point: currentPoint.current })
       }, fq)
@@ -93,9 +104,15 @@ function App() {
 
     static end() {
       if (!isDrawing.current) { return }
-      clearInterval(fqInt.current)
+      if (fqInt.current) {
+        clearInterval(fqInt.current)
+      }
+
       isDrawing.current = false
-      delete currentPath.id
+      if (currentPath.current) {
+        delete currentPath.current.id;
+      }
+
       currentPoint.current = null
       currentPath.current = null
       socket.emit('canvas-drawEnd')
@@ -146,10 +163,11 @@ function App() {
         return
       }
 
-      const pos = new Vector2(p5Inst.current.mouseX - currentSelectObjectOffset.current.x, p5Inst.current.mouseY - currentSelectObjectOffset.current.y)
-
-      currentSelect.current.pos = pos
-      socket.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
+      if(currentSelectObjectOffset.current) {
+        const pos = new Vector2(p5Inst.current.mouseX - currentSelectObjectOffset.current.x, p5Inst.current.mouseY - currentSelectObjectOffset.current.y)
+        currentSelect.current.pos = pos
+        socket.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
+      }
     }
 
     static end() {
@@ -161,12 +179,22 @@ function App() {
     }
   }
 
+  interface MethodType {
+    draw: string;
+    select: string;
+  }
+
   const methodType = {
     draw: 'draw',
     select: 'select'
   }
 
-  const methodClass = {
+  interface MethodClass {
+    draw: typeof Draw;
+    select: typeof Select;
+  }
+
+  const methodClass: { [key: string]: typeof Draw | typeof Select } = {
     draw: Draw,
     select: Select
   }
@@ -174,6 +202,7 @@ function App() {
 
   useEffect(() => {
     if (isSocketConnect) {
+      if(!startBtnEl.current||!containerEl.current||!colorBarEl.current) {return}
       startBtnEl.current.innerHTML = 'disconnect'
       selfColor.current = `#${Math.floor(Math.random() * 16777215).toString(16)}`
       containerEl.current.style.backgroundColor = '#FFFFFF'
@@ -182,6 +211,7 @@ function App() {
       // if (isP5Ready) { startP5() }
       startP5()
     } else {
+      if(!startBtnEl.current||!containerEl.current||!colorBarEl.current) {return}
       startBtnEl.current.innerHTML = 'connect'
       containerEl.current.style.backgroundColor = '#AAAAAA'
       setMethodTypeValue(methodType.draw)
@@ -202,6 +232,7 @@ function App() {
     methodTypeValueRef.current = methodTypeValue
     if (preMethodType === methodTypeValue) { return }
 
+    if (!preMethodType || !(preMethodType in methodClass)) {return}
     const method = methodClass[preMethodType]
     if (method) {
       method.end()
@@ -217,47 +248,47 @@ function App() {
         setIsSocketConnect(true)
       })
 
-      socket.on('init', (object) => {
+      socket.on('init', (object: { paths: Path[], imageBase64s: ImageBase64[] }) => {
         paths.current.push(...object.paths)
         const imageBase64s = object.imageBase64s
 
         setTimeout(() => {
           if (Array.isArray(imageBase64s)) {
-            imageBase64s.forEach((imageBase64) => {
-              pushNewImage(imageBase64)
-            })
+          imageBase64s.forEach((imageBase64: ImageBase64) => {
+          pushNewImage(imageBase64)
+        })
           }
         }, 100)
       })
 
-      socket.on('canvas-drawStart', (object) => {
-        const path = new Path(object.color, object.id)
+      socket.on('canvas-drawStart', (object: { color: string, id: string }) => {
+        const path: Path = new Path(object.color, object.id)
 
         paths.current.push(path)
       })
 
-      socket.on('canvas-drawing', (object) => {
-        getItemToAction(paths.current, object.id, (path) => { path.path.push(object.point) })
+      socket.on('canvas-drawing', (object: { id: string, point: any }) => {
+        getItemToAction(paths.current, object.id, (path: Path) => { path.path.push(object.point) })
       })
 
-      socket.on('canvas-drawEnd', (object) => {
-        getItemToAction(paths.current, object.id, (path) => { delete path.id })
+      socket.on('canvas-drawEnd', (object: { id: string }) => {
+        getItemToAction(paths.current, object.id, (path: Path) => { delete path.id })
       })
 
-      socket.on('canvas-image', (object) => {
+      socket.on('canvas-image', (object: ImageBase64) => {
         pushNewImage(object)
       })
 
-      socket.on('canvas-selectStart', (object) => {
-        getItemToAction(images.current, object.id, (image) => { image.selectColor = object.selectColor })
+      socket.on('canvas-selectStart', (object: { id: string, selectColor: string }) => {
+        getItemToAction(images.current, object.id, (image: Image) => { image.selectColor = object.selectColor })
       })
 
-      socket.on('canvas-selectDragged', (object) => {
+      socket.on('canvas-selectDragged', (object: { id: string, pos: Vector2 }) => {
         getItemToAction(images.current, object.id, (image) => { image.pos = object.pos })
       })
 
-      socket.on('canvas-selectEnd', (object) => {
-        getItemToAction(images.current, object.id, (image) => { image.selectColor = '' })
+      socket.on('canvas-selectEnd', (object: { id: string }) => {
+        getItemToAction(images.current, object.id, (image: Image) => { image.selectColor = '' })
       })
 
       socket.on('disconnect', () => {
@@ -270,11 +301,11 @@ function App() {
   }
 
   function startP5() {
-    new p5Instance((p5) => {
+    new p5Instance((p5:typeof p5Instance) => {
       p5Inst.current = p5
 
       p5.setup = () => {
-        p5.createCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight).parent(containerEl.current)
+        p5.createCanvas(containerEl.current?.offsetWidth, containerEl.current?.offsetHeight).parent(containerEl.current)
         p5.frameRate(30)
       }
 
@@ -335,19 +366,19 @@ function App() {
       }
 
       p5.windowResized = () => {
-        p5.resizeCanvas(containerEl.current.offsetWidth, containerEl.current.offsetHeight)
+        p5.resizeCanvas(containerEl.current?.offsetWidth, containerEl.current?.offsetHeight)
       }
     })
   }
 
-  function handleImage(event) {
-    const file = event.target.files[0]
+  function handleImage(event: React.ChangeEvent<HTMLInputElement>):void {
+    const file: File | undefined = event.target.files?.[0]
 
     if (file && file.type.startsWith('image')) {
       const reader = new FileReader()
 
-      reader.onload = (e) => {
-        const imageBase64 = new ImageBase64(e.target.result)
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const imageBase64: ImageBase64 = new ImageBase64(e.target?.result as string)
 
         pushNewImage(imageBase64, () => { socket.emit('canvas-image', imageBase64) })
       }
@@ -357,8 +388,8 @@ function App() {
     }
   }
 
-  function pushNewImage(imageBase64, action = null) {
-    p5Inst.current.loadImage(imageBase64.base64, (loadedImage) => {
+  function pushNewImage(imageBase64: ImageBase64, action: (() => void) | null = null):void {
+    p5Inst.current.loadImage(imageBase64.base64, (loadedImage:any) => {
       const image = new Image(loadedImage, imageBase64.pos, imageBase64.id)
 
       images.current.push(image)
@@ -367,17 +398,17 @@ function App() {
     })
   }
 
-  const getCreateImageUniId = () => {
+  const getCreateImageUniId:()=>string = () => {
     const currentTime = new Date().getTime()
     const random = Math.floor(Math.random() * 500)
 
     return `${currentTime}-${random}`
   }
 
-  function getItemToAction(list, id, action = null) {
+  function getItemToAction<T>(list: T[], id: string, action: ((item: T) => void) | null = null): T | null {
     if (!Array.isArray(list)) { console.error('list is not array') }
 
-    const item = list.find(x => x?.id === id)
+    const item = list.find((x: any) => x?.id === id)
 
     if (!item) { return null }
 
@@ -386,10 +417,12 @@ function App() {
     return item
   }
 
-  const isInCanvas = () => {
+  const isInCanvas: () => boolean = () => {
     if (p5Inst.current.mouseX < 0 || p5Inst.current.mouseY < 0) { return false }
 
-    if (p5Inst.current.mouseX > containerEl.offsetWidth || p5Inst.current.mouseY > containerEl.current.offsetHeight) { return false }
+    if(!containerEl.current) {return true}
+
+    if (p5Inst.current.mouseX > containerEl.current.offsetWidth || p5Inst.current.mouseY > containerEl.current.offsetHeight) { return false }
 
     return true
   }
