@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
-import usePrevious from './hook/usePrevious.js'
-import p5Instance from './function/p5.js'
+import usePrevious from './hooks/usePrevious.ts'
+import p5Instance from './functions/p5.ts'
 
-import { SocketFunction, socket } from './classes/Socket.js'
+import { SocketFunction, socket } from './classes/Socket.ts'
 
 function App() {
   const [isSocketConnect, setIsSocketConnect] = useState(false)
