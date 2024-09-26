@@ -87,7 +87,7 @@ function App() {
 
       fqInt.current = setInterval(() => {
 
-        if(!currentPath.current) {return}
+        if(!currentPath.current||!currentPoint.current) {return}
         currentPath.current.path.push(currentPoint.current)
         socket.emit('canvas-drawing', { point: currentPoint.current })
       }, fq)
@@ -333,7 +333,7 @@ function App() {
 
           p5.beginShape()
           p5.stroke(paths.current[i].color)
-
+          // console.log(path)
           for (let j = 0; j < path.length; j++) {
             p5.vertex(path[j].x, path[j].y)
           }
