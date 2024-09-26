@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import usePrevious from '@hooks/usePrevious.ts'
 import p5Instance from '@functions/p5.js'
+
 import ControlSection from '@components/ControlSection.tsx'
+import ColorBar from '@components/colorBar.tsx'
 
 import { SocketFunction, socket } from '@classes/Socket.js'
 import { MethodType } from '@interfaces/MethodType.ts'
@@ -9,9 +11,7 @@ import { MethodType } from '@interfaces/MethodType.ts'
 function App() {
   const [isSocketConnect, setIsSocketConnect] = useState(false)
   const socketFunction = new SocketFunction()
-  const startBtnEl = useRef<HTMLButtonElement>(null)
   const containerEl = useRef<HTMLDivElement>(null)
-  const colorBarEl = useRef<HTMLDivElement>(null)
 
   const fq: number = 10 // (ms)
   const fqInt = useRef<ReturnType<typeof setInterval> | null>()
@@ -22,8 +22,8 @@ function App() {
   const methodTypeValueRef = useRef<string>(methodTypeValue)
   const preMethodType = usePrevious<string>(methodTypeValue)
 
-  // const [isP5Ready, setIsP5Ready] = useState(false)
-  const selfColor = useRef('#FFFFFF')
+  const [selfColor, setSelfColor] = useState<string>('#FFFFFF')
+  const selfColorRef = useRef<string>('#FFFFFF')
 
   const paths = useRef<Path[]>([])
   const currentPoint = useRef<any>(null)
@@ -83,8 +83,8 @@ function App() {
   class Draw {
     static start() {
       isDrawing.current = true
-      currentPath.current = new Path(selfColor.current, socket.id)
-      socket.emit('canvas-drawStart', { color: selfColor.current })
+      currentPath.current = new Path(selfColorRef.current, socket.id)
+      socket.emit('canvas-drawStart', { color: selfColorRef.current })
       paths.current.push(currentPath.current)
 
       fqInt.current = setInterval(() => {
@@ -149,8 +149,8 @@ function App() {
       if (image) {
         currentSelect.current = image
         currentSelectObjectOffset.current = new Vector2(p5Inst.current.mouseX - currentSelect.current.pos.x, p5Inst.current.mouseY - currentSelect.current.pos.y)
-        currentSelect.current.selectColor = selfColor.current
-        socket.emit('canvas-selectStart', { id: currentSelect.current.id, selectColor: selfColor.current })
+        currentSelect.current.selectColor = selfColorRef.current
+        socket.emit('canvas-selectStart', { id: currentSelect.current.id, selectColor: selfColorRef.current })
       }
     }
 
@@ -206,22 +206,21 @@ function App() {
 
   useEffect(() => {
     if (isSocketConnect) {
-      if (!containerEl.current || !colorBarEl.current) { return }
-      selfColor.current = `#${Math.floor(Math.random() * 16777215).toString(16)}`
+      if (!containerEl.current) { return }
+      selfColorRef.current = `#${Math.floor(Math.random() * 16777215).toString(16)}`
       containerEl.current.style.backgroundColor = '#FFFFFF'
-      colorBarEl.current.style.backgroundColor = selfColor.current
+      setSelfColor(selfColorRef.current)
 
       startP5()
     } else {
-      if (!containerEl.current || !colorBarEl.current) { return }
+      if (!containerEl.current) { return }
       containerEl.current.style.backgroundColor = '#AAAAAA'
       setMethodTypeValue(methodTypeList.draw.value)
-      selfColor.current = '#FFFFFF'
-      colorBarEl.current.style.backgroundColor = selfColor.current
+      selfColorRef.current = '#FFFFFF'
+      setSelfColor(selfColorRef.current)
       paths.current = []
       currentPoint.current = null
       currentPath.current = null
-      // setIsDrawing(false)
       isDrawing.current = false
       images.current = []
       currentSelectObjectOffset.current = null
@@ -438,7 +437,7 @@ function App() {
         handleImage={handleImage}
       />
 
-      <div ref={colorBarEl} className="mt-2 h-5 w-full border border-black" ></div >
+      <ColorBar color={selfColor} />
       <div id="container" ref={containerEl} className="mt-2 aspect-square w-full overflow-hidden border border-black"></div>
 
     </div >
