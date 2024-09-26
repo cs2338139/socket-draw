@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { MethodType } from '@interfaces/MethodType.ts'
 
 interface Props {
@@ -13,17 +12,12 @@ interface Props {
 }
 
 function ControlSection(props: Props) {
-
   const { isSocketConnect, startSocket, methodTypeValueProps, methodTypeList, handleImage } = props
   const { methodTypeValue, setMethodTypeValue } = methodTypeValueProps
 
-  const startBtnEl = useRef<HTMLButtonElement>(null)
-
-
-
   return (
     <div className="flex items-center gap-5">
-      <button ref={startBtnEl} className="border border-black px-3 py-1" onClick={startSocket}>
+      <button className="border border-black px-3 py-1" onClick={startSocket}>
         {isSocketConnect ? 'disconnect' : 'connect'}
       </button>
 
