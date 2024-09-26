@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react'
-import usePrevious from './hooks/usePrevious.ts'
-import p5Instance from './functions/p5.js'
+import usePrevious from '@hooks/usePrevious.ts'
+import p5Instance from '@functions/p5.js'
+import ControlSection from '@components/ControlSection.tsx'
 
-import { SocketFunction, socket } from './classes/Socket.js'
+import { SocketFunction, socket } from '@classes/Socket.js'
+import { MethodType } from '@interfaces/MethodType.ts'
 
 function App() {
   const [isSocketConnect, setIsSocketConnect] = useState(false)
@@ -11,10 +13,10 @@ function App() {
   const containerEl = useRef<HTMLDivElement>(null)
   const colorBarEl = useRef<HTMLDivElement>(null)
 
-  const fq:number = 10 // (ms)
+  const fq: number = 10 // (ms)
   const fqInt = useRef<ReturnType<typeof setInterval> | null>()
 
-  const p5Inst = useRef<typeof p5Instance|null>(null)
+  const p5Inst = useRef<typeof p5Instance | null>(null)
 
   const [methodTypeValue, setMethodTypeValue] = useState<string>("")
   const methodTypeValueRef = useRef<string>(methodTypeValue)
@@ -25,18 +27,18 @@ function App() {
 
   const paths = useRef<Path[]>([])
   const currentPoint = useRef<any>(null)
-  const currentPath = useRef<Path|null>()
+  const currentPath = useRef<Path | null>()
   const isDrawing = useRef(false)
 
   const images = useRef<Image[]>([])
 
-  const currentSelect = useRef<Image|null>(null)
-  const currentSelectObjectOffset = useRef<Vector2|null>(null)
+  const currentSelect = useRef<Image | null>(null)
+  const currentSelectObjectOffset = useRef<Vector2 | null>(null)
 
   class Path {
     color: string;
-    id?: string|null;
-    constructor(color:string = '#000000', id:string|null = null) {
+    id?: string | null;
+    constructor(color: string = '#000000', id: string | null = null) {
       this.color = color
       this.id = id
     }
@@ -48,7 +50,7 @@ function App() {
     x: number;
     y: number;
 
-    constructor(x:number = 0, y:number = 0) {
+    constructor(x: number = 0, y: number = 0) {
       this.x = x
       this.y = y
     }
@@ -58,7 +60,7 @@ function App() {
     image: any;
     pos: Vector2;
     id: string;
-    constructor(image:any, pos:Vector2 = new Vector2(), id:string) {
+    constructor(image: any, pos: Vector2 = new Vector2(), id: string) {
       this.image = image
       this.pos = pos
       this.id = id
@@ -71,7 +73,7 @@ function App() {
     base64: string;
     pos: Vector2;
     id: string;
-    constructor(base64:string, pos:Vector2 = new Vector2()) {
+    constructor(base64: string, pos: Vector2 = new Vector2()) {
       this.base64 = base64
       this.pos = pos
       this.id = getCreateImageUniId()
@@ -87,7 +89,7 @@ function App() {
 
       fqInt.current = setInterval(() => {
 
-        if(!currentPath.current||!currentPoint.current) {return}
+        if (!currentPath.current || !currentPoint.current) { return }
         currentPath.current.path.push(currentPoint.current)
         socket.emit('canvas-drawing', { point: currentPoint.current })
       }, fq)
@@ -163,7 +165,7 @@ function App() {
         return
       }
 
-      if(currentSelectObjectOffset.current) {
+      if (currentSelectObjectOffset.current) {
         const pos = new Vector2(p5Inst.current.mouseX - currentSelectObjectOffset.current.x, p5Inst.current.mouseY - currentSelectObjectOffset.current.y)
         currentSelect.current.pos = pos
         socket.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
@@ -179,22 +181,24 @@ function App() {
     }
   }
 
-  interface MethodType {
-    draw: string;
-    select: string;
-  }
-
-  const methodType = {
-    draw: 'draw',
-    select: 'select'
+  const methodTypeList: { [key: string]: MethodType } = {
+    draw: {
+      name: 'Draw',
+      value: 'draw'
+    },
+    select: {
+      name: 'Select',
+      value: 'select'
+    }
   }
 
   interface MethodClass {
     draw: typeof Draw;
     select: typeof Select;
+    [key: string]: any;
   }
 
-  const methodClass: { [key: string]: typeof Draw | typeof Select } = {
+  const methodClass: MethodClass = {
     draw: Draw,
     select: Select
   }
@@ -202,19 +206,16 @@ function App() {
 
   useEffect(() => {
     if (isSocketConnect) {
-      if(!startBtnEl.current||!containerEl.current||!colorBarEl.current) {return}
-      startBtnEl.current.innerHTML = 'disconnect'
+      if (!containerEl.current || !colorBarEl.current) { return }
       selfColor.current = `#${Math.floor(Math.random() * 16777215).toString(16)}`
       containerEl.current.style.backgroundColor = '#FFFFFF'
       colorBarEl.current.style.backgroundColor = selfColor.current
 
-      // if (isP5Ready) { startP5() }
       startP5()
     } else {
-      if(!startBtnEl.current||!containerEl.current||!colorBarEl.current) {return}
-      startBtnEl.current.innerHTML = 'connect'
+      if (!containerEl.current || !colorBarEl.current) { return }
       containerEl.current.style.backgroundColor = '#AAAAAA'
-      setMethodTypeValue(methodType.draw)
+      setMethodTypeValue(methodTypeList.draw.value)
       selfColor.current = '#FFFFFF'
       colorBarEl.current.style.backgroundColor = selfColor.current
       paths.current = []
@@ -232,7 +233,7 @@ function App() {
     methodTypeValueRef.current = methodTypeValue
     if (preMethodType === methodTypeValue) { return }
 
-    if (!preMethodType || !(preMethodType in methodClass)) {return}
+    if (!preMethodType || !(preMethodType in methodClass)) { return }
     const method = methodClass[preMethodType]
     if (method) {
       method.end()
@@ -240,7 +241,7 @@ function App() {
   }, [methodTypeValue])
 
 
-  function startSocket() {
+  function startSocket(): void {
     if (!isSocketConnect) {
       socketFunction.startSocket()
 
@@ -254,9 +255,9 @@ function App() {
 
         setTimeout(() => {
           if (Array.isArray(imageBase64s)) {
-          imageBase64s.forEach((imageBase64: ImageBase64) => {
-          pushNewImage(imageBase64)
-        })
+            imageBase64s.forEach((imageBase64: ImageBase64) => {
+              pushNewImage(imageBase64)
+            })
           }
         }, 100)
       })
@@ -300,8 +301,8 @@ function App() {
     }
   }
 
-  function startP5() {
-    new p5Instance((p5:typeof p5Instance) => {
+  function startP5(): void {
+    new p5Instance((p5: typeof p5Instance) => {
       p5Inst.current = p5
 
       p5.setup = () => {
@@ -371,7 +372,7 @@ function App() {
     })
   }
 
-  function handleImage(event: React.ChangeEvent<HTMLInputElement>):void {
+  function handleImage(event: React.ChangeEvent<HTMLInputElement>): void {
     const file: File | undefined = event.target.files?.[0]
 
     if (file && file.type.startsWith('image')) {
@@ -388,8 +389,8 @@ function App() {
     }
   }
 
-  function pushNewImage(imageBase64: ImageBase64, action: (() => void) | null = null):void {
-    p5Inst.current.loadImage(imageBase64.base64, (loadedImage:any) => {
+  function pushNewImage(imageBase64: ImageBase64, action: (() => void) | null = null): void {
+    p5Inst.current.loadImage(imageBase64.base64, (loadedImage: any) => {
       const image = new Image(loadedImage, imageBase64.pos, imageBase64.id)
 
       images.current.push(image)
@@ -398,7 +399,7 @@ function App() {
     })
   }
 
-  const getCreateImageUniId:()=>string = () => {
+  const getCreateImageUniId: () => string = () => {
     const currentTime = new Date().getTime()
     const random = Math.floor(Math.random() * 500)
 
@@ -420,7 +421,7 @@ function App() {
   const isInCanvas: () => boolean = () => {
     if (p5Inst.current.mouseX < 0 || p5Inst.current.mouseY < 0) { return false }
 
-    if(!containerEl.current) {return true}
+    if (!containerEl.current) { return true }
 
     if (p5Inst.current.mouseX > containerEl.current.offsetWidth || p5Inst.current.mouseY > containerEl.current.offsetHeight) { return false }
 
@@ -429,22 +430,13 @@ function App() {
 
   return (
     <div className="m-10 border border-gray-400 px-10 py-5">
-      <div className="flex items-center gap-5">
-        <button ref={startBtnEl} className="border border-black px-3 py-1" onClick={startSocket}>
-          connect
-        </button>
-
-        <select value={methodTypeValue} onChange={(e) => { setMethodTypeValue(e.target.value) }} className={`${isSocketConnect ? 'block' : 'hidden'} h-10 w-40 border border-black px-1 py-0.5 text-center text-lg text-black`}>
-          <option value={methodType.draw}>
-            Draw
-          </option>
-          <option value={methodType.select}>
-            Select
-          </option>
-        </select>
-
-        <input className={`${isSocketConnect ? 'block' : 'hidden'}`} type="file" accept="image/*" onChange={handleImage} />
-      </div >
+      <ControlSection
+        isSocketConnect={isSocketConnect}
+        startSocket={startSocket}
+        methodTypeValueProps={{ methodTypeValue, setMethodTypeValue }}
+        methodTypeList={methodTypeList}
+        handleImage={handleImage}
+      />
 
       <div ref={colorBarEl} className="mt-2 h-5 w-full border border-black" ></div >
       <div id="container" ref={containerEl} className="mt-2 aspect-square w-full overflow-hidden border border-black"></div>
