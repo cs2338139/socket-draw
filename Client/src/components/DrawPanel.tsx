@@ -1,12 +1,9 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import usePrevious from '@hooks/usePrevious.ts'
 import p5Instance from '@utils/p5.js'
-import { socket } from '@classes/Socket.js'
-import { Vector2 } from "@classes/Vector2";
-import { Image } from "@classes/Image";
-import { Path } from "@classes/Path";
-import { ImageBase64 } from "@classes/ImageBase64";
+import { useSocket } from '@contexts/SocketContext';
 import { useData } from "@contexts/DataContext";
+import { Image, Path, ImageBase64, Vector2 } from "@classes";
 
 interface props {
     isSocketConnect: Boolean,
@@ -26,7 +23,7 @@ const DrawPanel = forwardRef((props: props, ref) => {
             })
         }
     }))
-
+    const { socketRef } = useSocket()
     const { isSocketConnect, selfColor, methodTypeValue } = props
     const { images, paths } = useData()
 
@@ -50,15 +47,15 @@ const DrawPanel = forwardRef((props: props, ref) => {
     class Draw {
         static start() {
             isDrawing.current = true
-            currentPath.current = new Path(selfColorRef.current, socket.id)
-            socket.emit('canvas-drawStart', { color: selfColorRef.current })
+            currentPath.current = new Path(selfColorRef.current, socketRef.current.id)
+            socketRef.current.emit('canvas-drawStart', { color: selfColorRef.current })
             paths.push(currentPath.current)
 
             fqInt.current = setInterval(() => {
 
                 if (!currentPath.current || !currentPoint.current) { return }
                 currentPath.current.path.push(currentPoint.current)
-                socket.emit('canvas-drawing', { point: currentPoint.current })
+                socketRef.current.emit('canvas-drawing', { point: currentPoint.current })
             }, fq)
         }
 
@@ -84,7 +81,7 @@ const DrawPanel = forwardRef((props: props, ref) => {
 
             currentPoint.current = null
             currentPath.current = null
-            socket.emit('canvas-drawEnd')
+            socketRef.current.emit('canvas-drawEnd')
         }
     }
 
@@ -117,7 +114,7 @@ const DrawPanel = forwardRef((props: props, ref) => {
                 currentSelect.current = image
                 currentSelectObjectOffset.current = new Vector2(p5Inst.current.mouseX - currentSelect.current.pos.x, p5Inst.current.mouseY - currentSelect.current.pos.y)
                 currentSelect.current.selectColor = selfColorRef.current
-                socket.emit('canvas-selectStart', { id: currentSelect.current.id, selectColor: selfColorRef.current })
+                socketRef.current.emit('canvas-selectStart', { id: currentSelect.current.id, selectColor: selfColorRef.current })
             }
         }
 
@@ -136,14 +133,14 @@ const DrawPanel = forwardRef((props: props, ref) => {
             if (currentSelectObjectOffset.current) {
                 const pos = new Vector2(p5Inst.current.mouseX - currentSelectObjectOffset.current.x, p5Inst.current.mouseY - currentSelectObjectOffset.current.y)
                 currentSelect.current.pos = pos
-                socket.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
+                socketRef.current.emit('canvas-selectDragged', { id: currentSelect.current.id, pos })
             }
         }
 
         static end() {
             if (!currentSelect.current) { return }
 
-            socket.emit('canvas-selectEnd', { id: currentSelect.current.id })
+            socketRef.current.emit('canvas-selectEnd', { id: currentSelect.current.id })
             currentSelect.current.selectColor = ''
             currentSelect.current = null
         }
