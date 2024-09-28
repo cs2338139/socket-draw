@@ -6,7 +6,7 @@ import { Vector2 } from "@classes/Vector2";
 import { Image } from "@classes/Image";
 import { Path } from "@classes/Path";
 import { ImageBase64 } from "@classes/ImageBase64";
-import { useData } from "@contexts/dataContext";
+import { useData } from "@contexts/DataContext";
 
 interface props {
     isSocketConnect: Boolean,

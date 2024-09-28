@@ -1,4 +1,4 @@
-import { DataContextProvider } from '@contexts/dataContext'
+import { DataContextProvider } from '@contexts/DataContext'
 import Panel from '@components/Panel'
 
 function App() {

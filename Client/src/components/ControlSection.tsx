@@ -1,4 +1,6 @@
 import { MethodType } from '@interfaces/MethodType.ts'
+import { styled } from '@mui/material/styles';
+import { Box, FormControl, Button, Select, MenuItem, InputLabel } from '@mui/material'
 
 interface Props {
   isSocketConnect: Boolean,
@@ -15,29 +17,63 @@ function ControlSection(props: Props) {
   const { isSocketConnect, startSocket, methodTypeValueProps, methodTypeList, handleImage } = props
   const { methodTypeValue, setMethodTypeValue } = methodTypeValueProps
 
+  const VisuallyHiddenInput = styled('input')({
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    height: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    whiteSpace: 'nowrap',
+    width: 1,
+  });
+
   return (
-    <div className="flex items-center gap-5">
-      <button className="border border-black px-3 py-1" onClick={startSocket}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <Button variant='contained'
+        sx={{ backgroundColor: isSocketConnect ? 'red' : 'green', transitionDuration: '0s' }}
+        disableRipple={true}
+        onClick={startSocket}>
         {isSocketConnect ? 'disconnect' : 'connect'}
-      </button>
+      </Button>
 
-      <select
-        value={methodTypeValue}
-        onChange={(e) => { setMethodTypeValue(e.target.value) }}
-        className={`${isSocketConnect ? 'block' : 'hidden'} h-10 w-40 border border-black px-1 py-0.5 text-center text-lg text-black`}>
-        {
-          Object.keys(methodTypeList).map((key) => {
-            return (
-              <option key={key} value={methodTypeList[key].value}>
-                {methodTypeList[key].name}
-              </option>
-            )
-          })
-        }
-      </select>
+      <FormControl sx={{ display: (isSocketConnect) ? 'block' : 'none' }}>
+        <InputLabel id="select-label-method">Method</InputLabel>
+        <Select
+          labelId='select-label-method'
+          value={methodTypeValue}
+          label="Method"
+          sx={{ padding: '0 30px', height: '40px' }}
+          onChange={(e) => { setMethodTypeValue(e.target.value) }}
+        >
+          {
+            Object.keys(methodTypeList).map((key) => {
+              return (
+                <MenuItem key={key} value={methodTypeList[key].value}>
+                  {methodTypeList[key].name}
+                </MenuItem>
+              )
+            })
+          }
+        </Select>
+      </FormControl>
 
-      <input className={`${isSocketConnect ? 'block' : 'hidden'}`} type="file" accept="image/*" onChange={handleImage} />
-    </div >
+      <Button
+        sx={{ display: (isSocketConnect) ? 'block' : 'none' }}
+        component="label"
+        role={undefined}
+        variant="contained"
+        tabIndex={-1}
+      >
+        上傳圖片
+        <VisuallyHiddenInput
+          type="file"
+          onChange={handleImage}
+          accept="image/*"
+        />
+      </Button>
+    </Box >
   );
 }
 
