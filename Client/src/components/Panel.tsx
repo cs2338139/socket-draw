@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
-import { useData } from '@contexts/dataContext'
+import { useData } from '@contexts/DataContext'
 
 import ControlSection from '@components/ControlSection.tsx'
 import ColorBar from '@components/ColorBar.tsx'
