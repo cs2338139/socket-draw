@@ -16,10 +16,10 @@ export default defineConfig(({ mode }) => {
         '@components': path.resolve(__dirname, 'src/components'),
         '@utils': path.resolve(__dirname, 'src/utils'),
         '@hooks': path.resolve(__dirname, 'src/hooks'),
-        '@functions': path.resolve(__dirname, 'src/functions'),
         '@classes': path.resolve(__dirname, 'src/classes'),
         '@assets': path.resolve(__dirname, 'src/assets'),
         '@interfaces': path.resolve(__dirname, 'src/interfaces'),
+        '@contexts': path.resolve(__dirname, 'src/contexts'),
       },
     },
   }

@@ -34,10 +34,11 @@
       "@components/*": ["components/*"],
       "@utils/*": ["utils/*"],
       "@hooks/*": ["hooks/*"],
-      "@functions/*": ["functions/*"],
+      "@functions/*": ["utils/*"],
       "@classes/*": ["classes/*"],
       "@interfaces/*": ["interfaces/*"],
       "@assets/*": ["assets/*"],
+      "@contexts/*": ["contexts/*"],
     },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
