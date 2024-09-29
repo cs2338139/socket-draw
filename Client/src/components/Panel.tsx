@@ -130,7 +130,7 @@ function Panel() {
       reader.onload = (e: ProgressEvent<FileReader>) => {
         const imageBase64: ImageBase64 = new ImageBase64(e.target?.result as string)
         if (!drawPanelRef.current) { return }
-        drawPanelRef.current.pushNewImage(imageBase64, () => { socket.emit('canvas-image', imageBase64) })
+        drawPanelRef.current.pushNewImage(imageBase64, () => { socketRef.current.emit('canvas-image', imageBase64) })
       }
       reader.readAsDataURL(file)
     } else {
