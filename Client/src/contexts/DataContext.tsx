@@ -1,6 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { Image } from "@classes/Image";
-import { Path } from "@classes/Path";
+import { Image, Path } from "@classes";
 
 const DataContext = createContext({ images: [], paths: [] } as { images: Image[], paths: Path[] });
 

@@ -1,28 +1,23 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { useData } from '@contexts/DataContext'
+import { useSocket } from '@contexts/SocketContext';
 
-import ControlSection from '@components/ControlSection.tsx'
-import ColorBar from '@components/ColorBar.tsx'
-import DrawPanel from '@components/DrawPanel.tsx'
-import { Vector2 } from "@classes/Vector2";
-import { Image } from "@classes/Image";
-import { Path } from "@classes/Path";
-import { ImageBase64 } from "@classes/ImageBase64";
+import { ColorBar, ControlSection, DrawPanel } from '@components';
+import { ImageBase64, Path, Vector2, Image } from '@classes';
 
-import { SocketFunction, socket } from '@classes/Socket.js'
 import { MethodType } from '@interfaces/MethodType.ts'
 
 function Panel() {
   const drawPanelRef = useRef<any>(null)
   const [isSocketConnect, setIsSocketConnect] = useState(false)
-  const socketFunction = new SocketFunction()
-
   const [methodTypeValue, setMethodTypeValue] = useState<string>("")
 
   const [selfColor, setSelfColor] = useState<string>('#FFFFFF')
   const selfColorRef = useRef<string>('#FFFFFF')
 
   const { images, paths } = useData()
+  const { socketRef, socketFunction } = useSocket()
+
 
   const methodTypeList: { [key: string]: MethodType } = {
     draw: {
@@ -50,8 +45,11 @@ function Panel() {
 
   function startSocket(): void {
     if (!isSocketConnect) {
-      socketFunction.startSocket()
+      socketFunction.connect()
 
+      const socket = socketRef.current
+
+      if (!socket) { return }
       socket.on('connect', () => {
         setIsSocketConnect(true)
       })

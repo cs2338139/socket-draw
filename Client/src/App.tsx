@@ -1,11 +1,14 @@
 import { DataContextProvider } from '@contexts/DataContext'
-import Panel from '@components/Panel'
+import { SocketContextProvider } from '@contexts/SocketContext'
+import { Panel } from '@components'
 
 function App() {
 
   return (
     <DataContextProvider>
-      <Panel />
+      <SocketContextProvider>
+        <Panel />
+      </SocketContextProvider>
     </DataContextProvider>
   )
 }
