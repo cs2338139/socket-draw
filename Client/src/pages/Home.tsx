@@ -7,7 +7,7 @@ import { ImageBase64, Path, Vector2, Image } from '@classes';
 
 import { MethodType } from '@interfaces/MethodType.ts'
 
-function Panel() {
+function Home() {
   const drawPanelRef = useRef<any>(null)
   const [isSocketConnect, setIsSocketConnect] = useState(false)
   const [methodTypeValue, setMethodTypeValue] = useState<string>("")
@@ -161,4 +161,4 @@ function Panel() {
   )
 }
 
-export default Panel
+export default Home

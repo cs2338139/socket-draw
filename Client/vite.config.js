@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
         '@assets': path.resolve(__dirname, 'src/assets'),
         '@interfaces': path.resolve(__dirname, 'src/interfaces'),
         '@contexts': path.resolve(__dirname, 'src/contexts'),
+        '@pages': path.resolve(__dirname, 'src/pages'),
       },
     },
   }

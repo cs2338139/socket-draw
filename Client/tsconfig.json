@@ -31,6 +31,8 @@
     "baseUrl": "./src",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
      "paths": {
+      "@pages/*": ["pages/*"],
+      "@pages": ["pages"],
       "@components/*": ["components/*"],
       "@components": ["components"],
       "@utils/*": ["utils/*"],

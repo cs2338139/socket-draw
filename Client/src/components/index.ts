@@ -1,6 +1,6 @@
 import ColorBar from "@components/ColorBar";
 import ControlSection from "@components/ControlSection";
 import DrawPanel from "@components/DrawPanel";
-import Panel from "@components/Panel";
+import NavBar from "@components/NavBar";
 
-export { ColorBar, ControlSection, DrawPanel, Panel };
+export { ColorBar, ControlSection, DrawPanel, NavBar };
